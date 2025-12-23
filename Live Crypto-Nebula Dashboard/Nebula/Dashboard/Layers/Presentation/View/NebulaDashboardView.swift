@@ -58,6 +58,9 @@ struct NebulaDashboardView: View {
         .onChange(of: viewModel.cryptos.count) { _ in
             initializePositionsIfNeeded(for: viewModel.cryptos)
         }
+        .onDisappear {
+            viewModel.stopLiveUpdates()
+        }
     }
 }
 

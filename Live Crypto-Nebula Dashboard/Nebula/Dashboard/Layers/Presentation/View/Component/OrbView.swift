@@ -11,20 +11,68 @@ struct OrbView: View {
     let ticker: TickerModel
     let namespace: Namespace.ID
     
+    private var price: Double {
+        Double(ticker.weightedAvgPrice) ?? 0
+    }
+    
+    private var energy: Double {
+        min(max(price / 50_000, 0.6), 1.4)
+    }
+    
+    private var orbColor: Color {
+        switch energy {
+        case ..<0.9: return .blue
+        case ..<1.1: return .purple
+        default: return .pink
+        }
+    }
+    
     var body: some View {
         ZStack {
-            // Radial gradient
             Circle()
                 .fill(
-                    RadialGradient(colors: [.blue.opacity(0.8), .black],
-                                   center: .center, startRadius: 1, endRadius: 60)
+                    RadialGradient(
+                        colors: [
+                            orbColor.opacity(0.9),
+                            orbColor.opacity(0.2),
+                            .black
+                        ],
+                        center: .center,
+                        startRadius: 1,
+                        endRadius: 80
+                    )
                 )
-                .matchedGeometryEffect(id: "shape_\(ticker.symbol)", in: namespace)
+                .scaleEffect(energy)
+                .blur(radius: 20)
+                .clipShape(Circle())
+                .drawingGroup()
             
-            VStack {
+            // Core Orb
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            orbColor.opacity(0.9),
+                            orbColor.opacity(0.2),
+                            .black
+                        ],
+                        center: .center,
+                        startRadius: 1,
+                        endRadius: 80
+                    )
+                )
+                .scaleEffect(energy)
+                .blur(radius: 20)
+                .compositingGroup()
+                .clipShape(Circle())
+                .drawingGroup()
+            
+            // Name and price
+            VStack(spacing: 2) {
                 Text(ticker.symbol.replacingOccurrences(of: "USDT", with: ""))
                     .font(.caption.bold())
-                Text("$\(Double(ticker.weightedAvgPrice) ?? 0, specifier: "%.2f")")
+                
+                Text("$\(price, specifier: "%.2f")")
                     .font(.system(size: 8, weight: .light))
             }
             .foregroundColor(.white)
