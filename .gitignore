@@ -1,0 +1,45 @@
+# --- Xcode ---
+# User settings
+xcuserdata/
+*.xcuserdatad
+*.xcuserstate
+
+# Ignore all personal Xcode user settings and breakpoints
+**/xcuserdata/
+*.xcbkptlist
+
+# Architecture / Derived Data
+build/
+DerivedData/
+
+# --- Swift Package Manager ---
+.build/
+.swiftpm/
+# This is where SPM stores local checkouts
+Packages/
+
+# --- CocoaPods ---
+# It is often recommended to exclude the Pods directory, 
+# though some teams prefer to commit it.
+Pods/
+Allow-list-Pods/
+
+# --- Fastlane ---
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# --- General OS Files ---
+.DS_Store
+*.swp
+*.lock
+
+# --- Dependency Managers ---
+.conan/
+.vcpkg/
+
+# --- Environment/Secrets ---
+.env
+*.key
+*.pem

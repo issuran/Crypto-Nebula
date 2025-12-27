@@ -17,49 +17,64 @@ struct NebulaDashboardView: View {
     @State private var dragStartPosition: CGPoint?
     
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        VStack {
+            Button {
+                viewModel.handleLiveUpdates()
+            } label: {
+                Text(viewModel.isNRTStreaming ? "Stop NRT" : "Start NRT")
+            }
             
-            // MARK: - Nebula Orbs
-            if selectedTicker == nil {
-                ForEach(viewModel.cryptos, id: \.symbol) { ticker in
-                    OrbView(
-                        ticker: ticker,
+        }
+        GeometryReader { geometry in
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                // MARK: - Nebula Orbs
+                if selectedTicker == nil {
+                    ForEach(viewModel.cryptos, id: \.symbol) { ticker in
+                        OrbView(
+                            ticker: ticker,
+                            namespace: nebulaNamespace
+                        )
+                        .position(
+                            x: positions[ticker.symbol]?.x ?? 0,
+                            y: positions[ticker.symbol]?.y ?? 0
+                        )
+                        .gesture(dragGesture(for: ticker))
+                        .onTapGesture {
+                            withAnimation(.heroSpring) {
+                                selectedTicker = ticker
+                            }
+                        }
+                    }
+                }
+                
+                // MARK: - Detail View (Hero Transition)
+                if let selected = selectedTicker {
+                    DetailView(
+                        ticker: selected,
                         namespace: nebulaNamespace
-                    )
-                    .position(
-                        x: positions[ticker.symbol]?.x ?? 0,
-                        y: positions[ticker.symbol]?.y ?? 0
-                    )
-                    .gesture(dragGesture(for: ticker))
-                    .onTapGesture {
+                    ) {
                         withAnimation(.heroSpring) {
-                            selectedTicker = ticker
+                            selectedTicker = nil
                         }
                     }
                 }
             }
-            
-            // MARK: - Detail View (Hero Transition)
-            if let selected = selectedTicker {
-                DetailView(
-                    ticker: selected,
-                    namespace: nebulaNamespace
-                ) {
-                    withAnimation(.heroSpring) {
-                        selectedTicker = nil
-                    }
-                }
+            .task {
+                await viewModel.load()
             }
-        }
-        .task {
-            await viewModel.load()
-        }
-        .onChange(of: viewModel.cryptos.count) { _ in
-            initializePositionsIfNeeded(for: viewModel.cryptos)
-        }
-        .onDisappear {
-            viewModel.stopLiveUpdates()
+            // Pass the geometry size to the function
+            .onChange(of: viewModel.cryptos.count) { _, _ in
+                initializePositionsIfNeeded(for: viewModel.cryptos, in: geometry.size)
+            }
+            .onAppear {
+                // Initial load check
+                initializePositionsIfNeeded(for: viewModel.cryptos, in: geometry.size)
+            }
+            .onDisappear {
+                viewModel.stopLiveUpdates()
+            }
         }
     }
 }
@@ -93,20 +108,19 @@ private extension NebulaDashboardView {
 // MARK: - Position Initialization
 
 private extension NebulaDashboardView {
-    func initializePositionsIfNeeded(for tickers: [TickerModel]) {
+    func initializePositionsIfNeeded(for tickers: [TickerModel], in size: CGSize) {
         guard positions.isEmpty else { return }
         
         for ticker in tickers {
-            positions[ticker.symbol] = randomPosition()
+            positions[ticker.symbol] = randomPosition(within: size)
         }
     }
     
-    func randomPosition() -> CGPoint {
-        let screen = UIScreen.main.bounds
-        
+    // Updated to use the provided size instead of UIScreen.main
+    func randomPosition(within size: CGSize) -> CGPoint {
         return CGPoint(
-            x: CGFloat.random(in: 80...(screen.width - 80)),
-            y: CGFloat.random(in: 120...(screen.height - 200))
+            x: CGFloat.random(in: 80...(size.width - 80)),
+            y: CGFloat.random(in: 120...(size.height - 200))
         )
     }
 }

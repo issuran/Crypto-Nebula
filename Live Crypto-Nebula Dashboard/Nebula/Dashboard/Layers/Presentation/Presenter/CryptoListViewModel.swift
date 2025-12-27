@@ -11,6 +11,7 @@ import Combine
 @MainActor
 final class CryptoListViewModel: ObservableObject {
     @Published var cryptos: [TickerModel] = []
+    @Published var isNRTStreaming: Bool = false
 
     private let getTopCryptosUseCase: GetTopCryptosUseCase
     private let priceStream: CryptoPriceStream
@@ -19,10 +20,10 @@ final class CryptoListViewModel: ObservableObject {
     
     init(
         getTopCryptosUseCase: GetTopCryptosUseCase,
-        priceStream: CryptoPriceStream = BinanceWebSocketService()
+        priceStream: CryptoPriceStream? = nil
     ) {
         self.getTopCryptosUseCase = getTopCryptosUseCase
-        self.priceStream = priceStream
+        self.priceStream = priceStream ?? BinanceWebSocketService()
     }
 
     func load() async {
@@ -35,6 +36,7 @@ final class CryptoListViewModel: ObservableObject {
     }
     
     func startLiveUpdates() {
+        isNRTStreaming = true
         let symbols = cryptos.map(\.symbol)
         
         priceStream.connect(symbols: symbols)
@@ -52,8 +54,17 @@ final class CryptoListViewModel: ObservableObject {
     }
     
     func stopLiveUpdates() {
+        isNRTStreaming = false
         priceStream.disconnect()
         cancellables.removeAll()
+    }
+    
+    func handleLiveUpdates() {
+        if isNRTStreaming {
+            stopLiveUpdates()
+        } else {
+            startLiveUpdates()
+        }
     }
     
     private func apply(_ update: LivePriceUpdate) {

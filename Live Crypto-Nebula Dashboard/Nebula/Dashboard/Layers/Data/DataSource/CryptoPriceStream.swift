@@ -17,7 +17,7 @@ protocol CryptoPriceStream {
 final class BinanceWebSocketService: CryptoPriceStream {
     private var webSocketTask: URLSessionWebSocketTask?
     private let subject = PassthroughSubject<LivePriceUpdate, Never>()
-    private let decoder = JSONDecoder()
+    let decoder = JSONDecoder()
 
     var pricePublisher: AnyPublisher<LivePriceUpdate, Never> {
         subject.eraseToAnyPublisher()
@@ -48,7 +48,7 @@ final class BinanceWebSocketService: CryptoPriceStream {
                let payload = root["data"],
                let payloadData = try? JSONSerialization.data(withJSONObject: payload),
                let update = try? decoder.decode(LivePriceUpdate.self, from: payloadData) {
-
+                
                 subject.send(update)
             }
 
